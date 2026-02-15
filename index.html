@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MC 图片转像素画工具 v5.0</title>
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #e0e0e0;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  padding: 15px;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: rgba(30, 30, 46, 0.85);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.title {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #00d4ff;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 14px;
+  color: #8892b0;
+  margin-bottom: 20px;
+}
+
+.card {
+  background: rgba(40, 42, 58, 0.6);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.card h4 {
+  color: #00d4ff;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.size-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.size-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 10px;
+  background: #2a2d3a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.size-btn.active {
+  background: #00d4ff;
+  color: #1a1a2e;
+  border-color: #00d4ff;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+}
+
+.custom-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.custom-size input {
+  width: 80px;
+  padding: 8px;
+  background: #2a2d3a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.file-upload {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-label {
+  display: inline-block;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.file-label:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+}
+
+.preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.preview-container {
+  text-align: center;
+  flex: 1;
+  min-width: 300px;
+}
+
+.preview-container h5 {
+  margin-bottom: 8px;
+  color: #8892b0;
+}
+
+.clickable-preview {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.clickable-preview:hover {
+  transform: scale(1.02);
+}
+
+#originalCanvas, #pixelCanvas {
+  border: 2px solid #444;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 400px;
+  background: #1a1a2e;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* 全屏预览模态框 */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  max-width: 90%;
+  max-height: 90%;
+  border: 2px solid #00d4ff;
+  border-radius: 8px;
+}
+
+.close-modal {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: white;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.result-container {
+  max-height: 250px;
+  overflow-y: auto;
+  background: rgba(26, 26, 46, 0.6);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.result-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.result-container::-webkit-scrollbar-track {
+  background: #2a2d3a;
+  border-radius: 3px;
+}
+
+.result-container::-webkit-scrollbar-thumb {
+  background: #00d4ff;
+  border-radius: 3px;
+}
+
+.info-text {
+  font-size: 13px;
+  color: #8892b0;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="title">🎮 MC 图片转像素画工具 v5.0</h1>
+  <p class="subtitle">支持自定义尺寸、全方块库、可点击放大预览</p>
+
+  <div class="card">
+    <h4>1. 选择尺寸</h4>
+    <div class="size-selector">
+      <button class="size-btn active" onclick="setSize(16)">16×16</button>
+      <button class="size-btn" onclick="setSize(32)">32×32</button>
+      <button class="size-btn" onclick="setSize(64)">64×64</button>
+    </div>
+    <div class="custom-size">
+      <span>自定义：</span>
+      <input type="number" id="customW" placeholder="宽" min="8" max="128" value="32">
+      <span>×</span>
+      <input type="number" id="customH" placeholder="高" min="8" max="128" value="32">
+      <button class="btn btn-secondary" onclick="applyCustomSize()">应用</button>
+    </div>
+    <div class="info-text">提示：尺寸越大，细节越丰富，但需要的方块也越多。</div>
+  </div>
+
+  <div class="file-upload">
+    <input type="file" id="fileInput" class="file-input" accept="image/*">
+    <label for="fileInput" class="file-label">📸 选择图片</label>
+    <div id="imageInfo" class="info-text"></div>
+  </div>
+
+  <div class="preview-row">
+    <div class="preview-container">
+      <h5>原始图片预览（点击放大）</h5>
+      <canvas id="originalCanvas" class="clickable-preview" onclick="openModal('original')"></canvas>
+    </div>
+    <div class="preview-container">
+      <h5>MC像素画预览（点击放大）</h5>
+      <canvas id="pixelCanvas" class="clickable-preview" onclick="openModal('pixel')"></canvas>
+    </div>
+  </div>
+
+  <div class="action-buttons">
+    <button class="btn btn-primary" onclick="convert()">✨ 生成像素画</button>
+    <button class="btn btn-secondary" onclick="saveResult()">💾 保存材料清单</button>
+    <button class="btn btn-danger" onclick="clearAll()">🗑️ 清空重置</button>
+  </div>
+
+  <div class="card">
+    <h4>📦 需要的方块列表：</h4>
+    <div id="result" class="result-container"></div>
+  </div>
+</div>
+
+<!-- 全屏预览模态框 -->
+<div id="previewModal" class="modal">
+  <span class="close-modal" onclick="closeModal()">&times;</span>
+  <img class="modal-content" id="modalImage">
+</div>
+
+<script>
+let width = 32, height = 32;
+let originalCanvas = document.getElementById('originalCanvas');
+let pixelCanvas = document.getElementById('pixelCanvas');
+let originalCtx = originalCanvas.getContext('2d');
+let pixelCtx = pixelCanvas.getContext('2d');
+let img = null;
+let blockList = {};
+
+// 超全MC方块库
+const mcBlocks = [
+  // 混凝土
+  {color:[249,255,254], name:'白色混凝土'},
+  {color:[207,211,213], name:'浅灰色混凝土'},
+  {color:[129,134,138], name:'灰色混凝土'},
+  {color:[47,49,50], name:'黑色混凝土'},
+  {color:[237,95,161], name:'粉色混凝土'},
+  {color:[217,61,58], name:'红色混凝土'},
+  {color:[255,171,51], name:'橙色混凝土'},
+  {color:[255,222,51], name:'黄色混凝土'},
+  {color:[126,212,72], name:'绿色混凝土'},
+  {color:[94,193,198], name:'青色混凝土'},
+  {color:[60,122,255], name:'蓝色混凝土'},
+  {color:[132,61,198], name:'紫色混凝土'},
+  {color:[164,96,61], name:'棕色混凝土'},
+  {color:[162,167,169], name:'淡蓝色混凝土'},
+  {color:[222,148,190], name:'品红色混凝土'},
+  {color:[85,106,46], name:'黄绿色混凝土'},
+  // 羊毛
+  {color:[255,255,255], name:'白色羊毛'},
+  {color:[190,190,190], name:'浅灰色羊毛'},
+  {color:[128,128,128], name:'灰色羊毛'},
+  {color:[0,0,0], name:'黑色羊毛'},
+  {color:[255,105,180], name:'粉色羊毛'},
+  {color:[255,0,0], name:'红色羊毛'},
+  {color:[255,165,0], name:'橙色羊毛'},
+  {color:[255,255,0], name:'黄色羊毛'},
+  {color:[0,255,0], name:'绿色羊毛'},
+  {color:[0,255,255], name:'青色羊毛'},
+  {color:[0,0,255], name:'蓝色羊毛'},
+  {color:[128,0,128], name:'紫色羊毛'},
+  {color:[139,69,19], name:'棕色羊毛'},
+  {color:[173,216,230], name:'淡蓝色羊毛'},
+  {color:[255,0,255], name:'品红色羊毛'},
+  {color:[154,205,50], name:'黄绿色羊毛'},
+  // 玻璃
+  {color:[255,255,255,128], name:'白色玻璃'},
+  {color:[190,190,190,128], name:'浅灰色玻璃'},
+  {color:[128,128,128,128], name:'灰色玻璃'},
+  {color:[0,0,0,128], name:'黑色玻璃'},
+  {color:[255,105,180,128], name:'粉色玻璃'},
+  {color:[255,0,0,128], name:'红色玻璃'},
+  {color:[255,165,0,128], name:'橙色玻璃'},
+  {color:[255,255,0,128], name:'黄色玻璃'},
+  {color:[0,255,0,128], name:'绿色玻璃'},
+  {color:[0,255,255,128], name:'青色玻璃'},
+  {color:[0,0,255,128], name:'蓝色玻璃'},
+  {color:[128,0,128,128], name:'紫色玻璃'},
+  {color:[139,69,19,128], name:'棕色玻璃'},
+  {color:[173,216,230,128], name:'淡蓝色玻璃'},
+  {color:[255,0,255,128], name:'品红色玻璃'},
+  {color:[154,205,50,128], name:'黄绿色玻璃'},
+  // 陶瓦
+  {color:[209,177,161], name:'白色陶瓦'},
+  {color:[152,130,120], name:'浅灰色陶瓦'},
+  {color:[100,85,78], name:'灰色陶瓦'},
+  {color:[36,31,28], name:'黑色陶瓦'},
+  {color:[180,96,125], name:'粉色陶瓦'},
+  {color:[143,42,33], name:'红色陶瓦'},
+  {color:[163,81,28], name:'橙色陶瓦'},
+  {color:[186,133,36], name:'黄色陶瓦'},
+  {color:[76,96,41], name:'绿色陶瓦'},
+  {color:[68,106,112], name:'青色陶瓦'},
+  {color:[46,56,120], name:'蓝色陶瓦'},
+  {color:[92,48,106], name:'紫色陶瓦'},
+  {color:[77,51,36], name:'棕色陶瓦'},
+  {color:[103,117,149], name:'淡蓝色陶瓦'},
+  {color:[137,70,101], name:'品红色陶瓦'},
+  {color:[89,105,46], name:'黄绿色陶瓦'},
+  // 木头类
+  {color:[210,180,140], name:'橡木木板'},
+  {color:[139,69,19], name:'深色橡木木板'},
+  {color:[160,82,45], name:'云杉木板'},
+  {color:[194,178,128], name:'白桦木板'},
+  {color:[165,42,42], name:'红树木板'},
+  {color:[102,76,51], name:'丛林木板'},
+  {color:[153,102,51], name:'金合欢木板'},
+  {color:[102,102,102], name:'绯红木板'},
+  {color:[102,102,153], name:'扭曲木板'},
+  // 石头类
+  {color:[136,136,136], name:'石头'},
+  {color:[169,169,169], name:'圆石'},
+  {color:[128,128,128], name:'石砖'},
+  {color:[192,192,192], name:'平滑石头'},
+  {color:[102,102,102], name:'深板岩'},
+  {color:[128,128,128], name:'深板岩砖'},
+  {color:[153,153,153], name:'安山岩'},
+  {color:[170,170,170], name:'闪长岩'},
+  {color:[187,187,187], name:'花岗岩'},
+  {color:[102,102,102], name:'玄武岩'},
+  {color:[136,136,136], name:'黑石'},
+  // 自然方块
+  {color:[255,250,205], name:'沙块'},
+  {color:[210,180,140], name:'红沙'},
+  {color:[160,82,45], name:'泥土'},
+  {color:[139,69,19], name:'草方块'},
+  {color:[34,139,34], name:'草径'},
+  {color:[102,102,102], name:'砂土'},
+  {color:[136,136,136], name:'粗土'},
+  {color:[0,0,139], name:'水'},
+  {color:[0,128,0], name:'树叶'},
+  {color:[139,69,19], name:'木头'},
+  {color:[165,42,42], name:'地狱砖'},
+  {color:[255,69,0], name:'岩浆'},
+  {color:[255,255,255], name:'雪块'},
+  {color:[173,216,230], name:'冰'},
+  {color:[139,69,19], name:'南瓜'},
+  {color:[255,140,0], name:'南瓜灯'},
+  {color:[255,255,255], name:'末地石'},
+  {color:[128,0,128], name:'紫珀块'},
+  {color:[0,0,0], name:'黑曜石'},
+  {color:[128,128,128], name:'煤炭块'},
+  {color:[255,255,255], name:'骨块'},
+  {color:[255,0,0], name:'红石块'},
+  {color:[0,255,0], name:'粘液块'},
+  {color:[255,255,0], name:'蜂蜜块'},
+  {color:[218,165,32], name:'金块'},
+  {color:[192,192,192], name:'铁块'},
+  {color:[0,206,209], name:'钻石块'},
+  {color:[128,128,0], name:'海晶灯'},
+  {color:[255,215,0], name:'金矿石'},
+  {color:[128,128,128], name:'铁矿石'},
+  {color:[0,0,255], name:'钻石矿石'},
+  {color:[255,0,0], name:'红石矿石'},
+  {color:[128,0,128], name:'紫颂果'},
+  {color:[102,102,102], name:'下界疣块'},
+  {color:[153,102,51], name:'菌柄'},
+  {color:[102,153,153], name:'诡异菌柄'},
+  {color:[153,153,102], name:'绯红菌核'},
+  {color:[102,153,153], name:'诡异菌核'},
+  {color:[153,102,153], name:'缠根泥土'},
+  {color:[102,153,102], name:'苔藓块'},
+  {color:[153,153,153], name:'凝灰岩'},
+  {color:[102,102,102], name:'方解石'},
+  {color:[153,153,153], name:'滴水石块'},
+  {color:[102,102,153], name:'深板岩圆石'},
+  {color:[153,153,153], name:'深板岩瓦'},
+  {color:[102,102,102], name:'深板岩砖'},
+  {color:[153,153,153], name:'深板岩裂纹砖'},
+  {color:[102,102,102], name:'深板岩刻纹砖'},
+  {color:[153,153,153], name:'深板岩磨制砖'}
+];
+
+function setSize(s) {
+  width = height = s;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function applyCustomSize() {
+  const w = parseInt(document.getElementById('customW').value) || 32;
+  const h = parseInt(document.getElementById('customH').value) || 32;
+  width = Math.max(8, Math.min(128, w));
+  height = Math.max(8, Math.min(128, h));
+  document.getElementById('customW').value = width;
+  document.getElementById('customH').value = height;
+  document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+}
+
+document.getElementById('fileInput').onchange = function(e) {
+  const reader = new FileReader();
+  reader.onload = function() {
+    const image = new Image();
+    image.onload = function() {
+      img = image;
+      document.getElementById('imageInfo').textContent = `图片尺寸：${image.width}×${image.height}`;
+      drawOriginalImage();
+    }
+    image.src = reader.result;
+  }
+  reader.readAsDataURL(e.target.files[0]);
+}
+
+function drawOriginalImage() {
+  const maxDim = 400;
+  let scale = Math.min(maxDim / img.width, maxDim / img.height);
+  let w = img.width * scale;
+  let h = img.height * scale;
+
+  originalCanvas.width = w;
+  originalCanvas.height = h;
+  originalCtx.drawImage(img, 0, 0, w, h);
+}
+
+function convert() {
+  if (!img) return alert('请先上传图片');
+  blockList = {};
+
+  pixelCanvas.width = width;
+  pixelCanvas.height = height;
+  pixelCtx.drawImage(img, 0, 0, width, height);
+  const imageData = pixelCtx.getImageData(0, 0, width, height).data;
+  pixelCtx.clearRect(0, 0, width, height);
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const r = imageData[i];
+      const g = imageData[i + 1];
+      const b = imageData[i + 2];
+      const a = imageData[i + 3];
+      const block = getBlock(r, g, b, a);
+      pixelCtx.fillStyle = `rgba(${block.color[0]},${block.color[1]},${block.color[2]},${block.color[3] || 255})`;
+      pixelCtx.fillRect(x, y, 1, 1);
+      blockList[block.name] = (blockList[block.name] || 0) + 1;
+    }
+  }
+  showList();
+}
+
+function getBlock(r, g, b, a = 255) {
+  let minDistance = Infinity;
+  let bestBlock = mcBlocks[0];
+  for (const block of mcBlocks) {
+    const dr = r - block.color[0];
+    const dg = g - block.color[1];
+    const db = b - block.color[2];
+    const da = a - (block.color[3] || 255);
+    const distance = dr * dr + dg * dg + db * db + da * da;
+    if (distance < minDistance) {
+      minDistance = distance;
+      bestBlock = block;
+    }
+  }
+  return bestBlock;
+}
+
+function showList() {
+  let html = `尺寸：${width}×${height}<br>`;
+  const sortedBlocks = Object.entries(blockList).sort((a, b) => b[1] - a[1]);
+  for (const [name, count] of sortedBlocks) {
+    html += `${name}：${count}个<br>`;
+  }
+  document.getElementById('result').innerHTML = html;
+}
+
+function saveResult() {
+  const data = document.getElementById('result').innerText;
+  const blob = new Blob([data], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `MC像素画_${width}x${height}_材料清单.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearAll() {
+  originalCtx.clearRect(0, 0, originalCanvas.width, originalCanvas.height);
+  pixelCtx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+  document.getElementById('result').innerHTML = '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('imageInfo').textContent = '';
+  img = null;
+  blockList = {};
+}
+
+// 全屏预览功能
+function openModal(type) {
+  const modal = document.getElementById('previewModal');
+  const modalImg = document.getElementById('modalImage');
+  let canvas = type === 'original' ? originalCanvas : pixelCanvas;
+  modalImg.src = canvas.toDataURL('image/png');
+  modal.style.display = 'flex';
+}
+
+function closeModal() {
+  const modal = document.getElementById('previewModal');
+  modal.style.display = 'none';
+}
+
+// 点击模态框背景关闭
+document.getElementById('previewModal').onclick = function(event) {
+  if (event.target === this) {
+    closeModal();
+  }
+}
+</script>
+</body>
+</html>
